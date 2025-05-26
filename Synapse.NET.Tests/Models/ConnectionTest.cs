@@ -14,14 +14,12 @@ public class ConnectionTest
         var fromNode = new Node(bias: 0.0) { Value = 1.0 };
         var toNode = new Node(bias: 0.0);
         double weight = 2.0;
-        var activationFunction = ActivationFunctions.Sigmoid;
         // Act
-        var connection = new Connection(fromNode, toNode, weight, activationFunction);
+        var connection = new Connection(fromNode, toNode, weight);
         // Assert
         Assert.Equal(fromNode, connection.From);
         Assert.Equal(toNode, connection.To);
         Assert.Equal(weight, connection.Weight);
-        Assert.Equal(activationFunction, connection.ActivationFunction);
     }
 
     #endregion
@@ -35,9 +33,9 @@ public class ConnectionTest
     public void Connection_Value_ShouldBeCalculatedCorrectly(double weight, double fromValue, double expectedValue)
     {
         // Arrange
-        var fromNode = new Node(bias: 0.0) { Value = fromValue };
-        var toNode = new Node(bias: 0.0);
-        var connection = new Connection(fromNode, toNode, weight, ActivationFunctions.Linear);
+        var fromNode = new Node(bias: 0.0, activationFunction: ActivationFunctions.Linear) { Value = fromValue };
+        var toNode = new Node(bias: 0.0, activationFunction: ActivationFunctions.Linear);
+        var connection = new Connection(fromNode, toNode, weight);
         // Act
         var actualValue = connection.Value;
         // Assert

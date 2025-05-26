@@ -5,38 +5,47 @@ namespace Synapse.NET.Tests.Models;
 
 public class NodeTest
 {
+    #region LinearTestNode
+    
+    const double linearTestNodeDefaultValue = 0.0;
+    const double linearTestNodeBias = 0.0;
+    static readonly Func<double, double> linearTestNodeAF = ActivationFunctions.Linear;
+    Node linearTestNode = new Node(bias: linearTestNodeBias,activationFunction: linearTestNodeAF);
+    
+    #endregion
+
     #region Constructor
 
     [Fact]
     public void Node_InitialValue_ShouldBeZero()
     {
-        // Act
-        var node = new Node();
         // Assert
-        Assert.Equal(0, node.Value);
-        Assert.Equal(0, node.Bias);
+        Assert.Equal(linearTestNodeDefaultValue, linearTestNode.Value);
+        Assert.Equal(linearTestNodeBias, linearTestNode.Bias);
     }
 
     [Fact]
     public void Node_SetValue_ShouldUpdateValue()
     {
+        // Arrange
+        const double newValue = 0.5;
         // Act
-        var node = new Node
-        {
-            Value = 5.0
-        };
+        linearTestNode.Value = newValue;
         // Assert
-        Assert.Equal(5.0, node.Value);
-        Assert.Equal(0, node.Bias);
+        Assert.Equal(newValue, linearTestNode.Value);
+        Assert.Equal(linearTestNodeBias, linearTestNode.Bias);
     }
 
     [Fact]
     public void Node_SetBias_ShouldUpdateBias()
     {
+        // Arrange
+        const double newBias = 2.0;
         // Act
-        var node = new Node(bias: 2.0);
+        linearTestNode.Bias = newBias;
         // Assert
-        Assert.Equal(2.0, node.Bias);
+        Assert.Equal(linearTestNodeDefaultValue + newBias, linearTestNode.Value);
+        Assert.Equal(newBias, linearTestNode.Bias);
     }
 
     #endregion
@@ -54,13 +63,11 @@ public class NodeTest
         // Arrange
         const double value = 3.0;
         var expectedValue = value + bias;
+        linearTestNode.Bias = bias;
         // Act
-        var node = new Node(bias: bias)
-        {
-            Value = value
-        };
+        linearTestNode.Value = value;
         // Assert
-        Assert.Equal(expectedValue, node.Value);
+        Assert.Equal(expectedValue, linearTestNode.Value);
     }
 
     #endregion
@@ -72,17 +79,19 @@ public class NodeTest
     public void Node_GetValue_ShouldSumInConnections()
     {
         // Arrange
-        var node = new Node(bias: 0.0);
-        var connection1 = new Connection(new Node(bias:0.0) { Value = 1.0 }, node, 1.0, ActivationFunctions.Linear);
-        var connection2 = new Connection(new Node(bias: 0.0) { Value = 1.0 }, node, 1.0, ActivationFunctions.Linear);
-        var expectedValue = connection1.Value + connection2.Value;
+        var inputNode1 = new Node(bias: 0, activationFunction: ActivationFunctions.Linear) { Value = 1.0 };
+        var inputNode2 = new Node(bias: 0, activationFunction: ActivationFunctions.Linear) { Value = 1.0 };
+
+        new Connection(inputNode1, linearTestNode, 1.0);
+        new Connection(inputNode2, linearTestNode, 1.0);
+
+        var expectedValue = 2;
 
         // Assert
-        Assert.Equal(expectedValue, node.Value);
+        Assert.Equal(expectedValue, linearTestNode.Value);
     }
 
     #endregion
 
     #endregion
-
 }
