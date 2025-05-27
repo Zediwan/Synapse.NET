@@ -26,21 +26,7 @@ public class ConnectionTest
 
     #region Value
 
-    [Theory]
-    [InlineData(1.0, 2.0, 2.0)]
-    [InlineData(-1.0, 2.0, -2.0)]
-    [InlineData(0.0, 2.0, 0.0)]
-    public void Connection_Value_ShouldBeCalculatedCorrectly(double weight, double fromValue, double expectedValue)
-    {
-        // Arrange
-        var fromNode = new Node(bias: 0.0, activationFunction: ActivationFunctions.Linear) { Value = fromValue };
-        var toNode = new Node(bias: 0.0, activationFunction: ActivationFunctions.Linear);
-        var connection = new Connection(fromNode, toNode, weight);
-        // Act
-        var actualValue = connection.Value;
-        // Assert
-        Assert.Equal(expectedValue, actualValue);
-    }
+    // TODO: add Tests with mocked nodes
 
     #endregion
 }

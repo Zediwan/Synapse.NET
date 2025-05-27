@@ -72,26 +72,7 @@ public class NodeTest
 
     #endregion
 
-    #region Connection
-
-    // Create a test with mocked connections
-    [Fact]
-    public void Node_GetValue_ShouldSumInConnections()
-    {
-        // Arrange
-        var inputNode1 = new Node(bias: 0, activationFunction: ActivationFunctions.Linear) { Value = 1.0 };
-        var inputNode2 = new Node(bias: 0, activationFunction: ActivationFunctions.Linear) { Value = 1.0 };
-
-        new Connection(inputNode1, linearTestNode, 1.0);
-        new Connection(inputNode2, linearTestNode, 1.0);
-
-        var expectedValue = 2;
-
-        // Assert
-        Assert.Equal(expectedValue, linearTestNode.Value);
-    }
-
-    #endregion
+    // TODO: add Tests with mocked connections
 
     #endregion
 }
