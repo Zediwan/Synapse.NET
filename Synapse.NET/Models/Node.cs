@@ -31,4 +31,38 @@ public class Node
         Bias = bias;
         ActivationFunction = activationFunction ?? Node.DEFAULT_ACTIVATION_FUNCTION;
     }
+
+    /// <summary>
+    /// Checks if this node is sending output to another node.
+    /// </summary>
+    /// <param name="other"></param>
+    /// <returns></returns>
+    public bool IsGoingTo(Node other)
+    {
+        ArgumentNullException.ThrowIfNull(other);
+        return Connection.AreConnected(this, other);
+    }
+
+    /// <summary>
+    /// Checks if this node is receiving input from another node.
+    /// </summary>
+    /// <param name="other"></param>
+    /// <returns></returns>
+    public bool IsRecievingFrom(Node other)
+    {
+        ArgumentNullException.ThrowIfNull(other);
+        return Connection.AreConnected(other, this);
+    }
+
+    /// <summary>
+    /// Gets the connection to another node.
+    /// </summary>
+    /// <param name="other"></param>
+    /// <returns></returns>
+    /// <exception cref="InvalidOperationException"></exception>
+    public Connection getConnectionTo(Node other)
+    {
+        ArgumentNullException.ThrowIfNull(other);
+        return OutConnections.FirstOrDefault(c => c.To == other) ?? throw new InvalidOperationException($"No connection found to node {other}.");
+    }
 }
