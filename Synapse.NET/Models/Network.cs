@@ -1,81 +1,35 @@
-using System.Numerics;
+using Synapse.NET.Helpers;
 
 namespace Synapse.NET.Models;
 
-public class Network
+public class Network(Genome genome)
 {
-    public readonly int NumInputs;
-    public readonly int NumOutputs;
+    private readonly Dictionary<Guid, double> _currentValues = new();
 
-    public List<Node> InputNodes;
-    public List<Node> OutputNodes;
-
-    public Network(int numInputs, int numOutputs)
+    public void FeedForward(Dictionary<Guid, float> inputValues)
     {
-        if (numInputs <= 0)
-            throw new ArgumentException("Number of inputs must be greater than zero.", nameof(numInputs));
-        if (numOutputs <= 0)
-            throw new ArgumentException("Number of outputs must be greater than zero.", nameof(numOutputs));
+        _currentValues.Clear();
 
-        NumInputs = numInputs;
-        NumOutputs = numOutputs;
+        // Load inputs
+        foreach (var (id, value) in inputValues)
+            _currentValues[id] = value;
 
-        InputNodes = Enumerable.Range(0, numInputs).Select(_ => new Node()).ToList();
-        OutputNodes = Enumerable.Range(0, numOutputs).Select(_ => new Node()).ToList();
-    }
-
-    /// <summary>
-    /// Connects all input nodes to all output nodes with the specified weights.
-    /// If no weights are provided, the default weight of 1.0 is used for all connections.
-    /// </summary>
-    /// <param name="weights"> A 2-dimensional matrix representing the weights (sizes must match) </param>
-    /// <exception cref="InvalidOperationException"></exception>
-    /// <exception cref="ArgumentException"></exception>
-    public void FullyConnectInputAndOutputNodes(double[,] weights = null)
-    {
-        if (InputNodes.Count != NumInputs)
-            throw new InvalidOperationException($"Input nodes count ({InputNodes.Count}) does not match NumInputs ({NumInputs}).");
-
-        if (OutputNodes.Count != NumOutputs)
-            throw new InvalidOperationException($"Output nodes count ({OutputNodes.Count}) does not match NumOutputs ({NumOutputs}).");
-
-        if (weights != null && (weights.GetLength(0) != NumInputs || weights.GetLength(1) != NumOutputs))
-            throw new ArgumentException($"Weights matrix dimensions ({weights.GetLength(0)}x{weights.GetLength(1)}) do not match network dimensions ({NumInputs}x{NumOutputs}).", nameof(weights));
-
-        for (var i = 0; i < NumInputs; i++)
+        // Process nodes (topological sort needed for hidden layers)
+        foreach (var conn in genome.Connections.Values.Where(c => c.Enabled))
         {
-            for (var j = 0; j < NumOutputs; j++)
-            {
-                if (InputNodes[i] == null)
-                    throw new InvalidOperationException($"Input node at index {i} is null.");
-                if (OutputNodes[j] == null)
-                    throw new InvalidOperationException($"Output node at index {j} is null.");
+            var input = _currentValues.GetValueOrDefault(conn.FromNode, 0f);
+            _currentValues[conn.ToNode] = _currentValues.GetValueOrDefault(conn.ToNode) + input * conn.Weight;
+        }
 
-                // Check if the nodes are already connected
-                if (InputNodes[i].IsGoingTo(OutputNodes[j]))
-                    continue; // Skip if already connected
-
-                var weight = weights != null ? weights[i, j] : 1.0;
-                Connection.Connect(InputNodes[i], OutputNodes[j], weight);
-            }
+        // Apply activation function
+        foreach (var node in genome.Nodes.Values.Where(node => node.Type != NeuronType.Input && node.Type != NeuronType.Bias))
+        {
+            _currentValues[node.Id] = ActivationFunctions.Functions[node.ActivationType](_currentValues.GetValueOrDefault(node.Id));
         }
     }
 
-    public List<double> FeedForward(List<double> inputs)
+    public double GetOutput(Guid outputNode)
     {
-        if (inputs.Count != NumInputs)
-            throw new ArgumentException($"Expected {NumInputs} inputs, but got {inputs.Count}.", nameof(inputs));
-
-        // Set input node values
-        for (var i = 0; i < NumInputs; i++)
-        {
-            InputNodes[i].Value = inputs[i];
-        }
-
-        // Calculate output node values
-        var outputs = new List<double>(NumOutputs);
-        outputs.AddRange(OutputNodes.Select(outputNode => outputNode.Value));
-
-        return outputs;
+        return _currentValues.GetValueOrDefault(outputNode, 0f);
     }
 }

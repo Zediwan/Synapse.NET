@@ -1,10 +1,17 @@
+using Synapse.NET.Models;
+
 namespace Synapse.NET.Helpers;
 
 public static class ActivationFunctions
 {
-    public static readonly Func<double, double> Sigmoid = x => 1 / (1 + Math.Exp(-x));
-	public static readonly Func<double, double> ReLU = x => x < 0 ? 0 : x;
-	public static readonly Func<double, double> Tanh = Math.Tanh;
-	public static readonly Func<double, double> LeakyReLU = x => x < 0 ? 0.01 * x : x;
-	public static readonly Func<double, double> Linear = x => x;
+    public static readonly Dictionary<ActivationType, Func<double, double>> Functions =
+        new()
+        {
+            { ActivationType.Sigmoid, x => 1.0 / (1.0 + Math.Exp(-x)) },
+            { ActivationType.Tanh, Math.Tanh },
+            { ActivationType.ReLU, x => Math.Max(0.0, x) },
+            { ActivationType.Linear, x => x },
+            { ActivationType.LeakyReLU, x => x > 0 ? x : 0.01 * x },
+            { ActivationType.Step, x => x >= 0 ? 1.0 : 0.0 }
+        };
 }
