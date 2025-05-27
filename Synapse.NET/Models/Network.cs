@@ -1,5 +1,3 @@
-using Synapse.NET.Helpers;
-
 namespace Synapse.NET.Models;
 
 public class Network
@@ -24,17 +22,15 @@ public class Network
         OutputNodes = Enumerable.Range(0, numOutputs).Select(_ => new Node()).ToList();
     }
 
-    public void FullyConnect()
+    public void FullyConnectNodes()
     {
-        foreach (var inputNode in _inputNodes)
-        {
-            foreach (var outputNode in _outputNodes)
-            {
-                var connection = new Connection(inputNode, outputNode, 1.0); // Default weight of 1.0
-                inputNode.OutConnections.Add(connection);
-                outputNode.InConnections.Add(connection);
-            }
-        }
+        if (InputNodes.Count != NumInputs)
+            throw new InvalidOperationException($"Input nodes count ({InputNodes.Count}) does not match NumInputs ({NumInputs}).");
+
+        if (OutputNodes.Count != NumOutputs)
+            throw new InvalidOperationException($"Output nodes count ({OutputNodes.Count}) does not match NumOutputs ({NumOutputs}).");
+
+        foreach (var connection in from inputNode in InputNodes from outputNode in OutputNodes select new Connection(inputNode, outputNode, 1.0)) {}
     }
 
     public List<double> FeedForward(List<double> inputs)
