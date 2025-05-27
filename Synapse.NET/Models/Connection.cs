@@ -5,10 +5,7 @@ namespace Synapse.NET.Models;
 public class Connection
 {
     public double Value => From.Value * Weight;
-
     public double Weight { get; set; }
-    public Func<double, double> ActivationFunction { get; set; }
-
     public Node From { get; set; }
     public Node To { get; set; }
 
