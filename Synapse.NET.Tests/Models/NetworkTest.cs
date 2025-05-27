@@ -9,13 +9,45 @@ public class NetworkTest
     public const int NumInputs = 2;
     public const int NumOutputs = 1;
 
-    public Node inputNode1 = new Node(bias: 0.0, activationFunction: ActivationFunctions.Linear);
-    public Node inputNode2 = new Node(bias: 0.0, activationFunction: ActivationFunctions.Linear);
-    public Node outputNode = new Node(bias: 0.0, activationFunction: ActivationFunctions.Linear);
+    public Node InputNode1 = new(bias: 0.0, activationFunction: ActivationFunctions.Linear);
+    public Node InputNode2 = new(bias: 0.0, activationFunction: ActivationFunctions.Linear);
+    public Node OutputNode = new(bias: 0.0, activationFunction: ActivationFunctions.Linear);
 
     public NetworkTest()
     {
         Network = new Network(NumInputs, NumOutputs)
+        {
+            InputNodes =
+            {
+                [0] = InputNode1,
+                [1] = InputNode2
+            },
+            OutputNodes =
+            {
+                [0] = OutputNode
+            }
+        };
+        Network.FullyConnectInputAndOutputNodes();
+    }
+
+    #region Constructor
+
+
+
+    #endregion
+
+    #region FullyConnectInputAndOutputNodes
+
+    [Fact]
+    public void FullyConnectInputAndOutputNodes_ShouldCreateConnectionsWithDefaultWeights()
+    {
+        // Arrange
+        const int numInputs = 2;
+        const int numOutputs = 1;
+        Node inputNode1 = new(bias: 0.0, activationFunction: ActivationFunctions.Linear);
+        Node inputNode2 = new(bias: 0.0, activationFunction: ActivationFunctions.Linear);
+        Node outputNode1 = new(bias: 0.0, activationFunction: ActivationFunctions.Linear);
+        Network network = new(numInputs, numOutputs)
         {
             InputNodes =
             {
@@ -24,16 +56,54 @@ public class NetworkTest
             },
             OutputNodes =
             {
-                [0] = outputNode
+                [0] = outputNode1
             }
         };
-        Network.FullyConnectNodes();
+        // Act
+        network.FullyConnectInputAndOutputNodes();
+        // Assert
+        Assert.True(inputNode1.IsGoingTo(outputNode1));
+        Assert.True(outputNode1.IsRecievingFrom(inputNode1));
+        Assert.True(inputNode2.IsGoingTo(outputNode1));
+        Assert.True(outputNode1.IsRecievingFrom(inputNode2));
     }
 
+    [Fact]
+    public void FullyConnectInputAndOutputNodes_ShouldCreateConnectionsWithSpecifiedWeights()
+    {
+        // Arrange
+        const int numInputs = 2;
+        const int numOutputs = 1;
+        Node inputNode1 = new(bias: 0.0, activationFunction: ActivationFunctions.Linear);
+        Node inputNode2 = new(bias: 0.0, activationFunction: ActivationFunctions.Linear);
+        Node outputNode1 = new(bias: 0.0, activationFunction: ActivationFunctions.Linear);
+        Network network = new(numInputs, numOutputs)
+        {
+            InputNodes =
+            {
+                [0] = inputNode1,
+                [1] = inputNode2
+            },
+            OutputNodes =
+            {
+                [0] = outputNode1
+            }
+        };
+        var weights = new double[numInputs, numOutputs];
+        weights[0, 0] = 1.0; // Weight from inputNode1 to outputNode1
+        weights[1, 0] = 2.0; // Weight from inputNode2 to outputNode1
 
-    #region Constructor
-
-
+        // Act
+        network.FullyConnectInputAndOutputNodes(weights);
+        // Assert
+        Assert.True(inputNode1.IsGoingTo(outputNode1));
+        Assert.True(outputNode1.IsRecievingFrom(inputNode1));
+        Assert.True(inputNode2.IsGoingTo(outputNode1));
+        Assert.True(outputNode1.IsRecievingFrom(inputNode2));
+        // Check weights
+        Assert.Equal(1.0, inputNode1.getConnectionTo(outputNode1).Weight);
+        Assert.Equal(2.0, inputNode2.getConnectionTo(outputNode1).Weight);
+    }
 
     #endregion
 
