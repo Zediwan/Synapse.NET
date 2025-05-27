@@ -7,8 +7,8 @@ public class Network
     public readonly int NumInputs;
     public readonly int NumOutputs;
 
-    private List<Node> _inputNodes;
-    private List<Node> _outputNodes;
+    public List<Node> InputNodes;
+    public List<Node> OutputNodes;
 
     public Network(int numInputs, int numOutputs)
     {
@@ -20,8 +20,8 @@ public class Network
         NumInputs = numInputs;
         NumOutputs = numOutputs;
 
-        _inputNodes = Enumerable.Range(0, numInputs).Select(_ => new Node()).ToList();
-        _outputNodes = Enumerable.Range(0, numOutputs).Select(_ => new Node()).ToList();
+        InputNodes = Enumerable.Range(0, numInputs).Select(_ => new Node()).ToList();
+        OutputNodes = Enumerable.Range(0, numOutputs).Select(_ => new Node()).ToList();
     }
 
     public void FullyConnect()
@@ -45,17 +45,12 @@ public class Network
         // Set input node values
         for (var i = 0; i < NumInputs; i++)
         {
-            _inputNodes[i].Value = inputs[i];
+            InputNodes[i].Value = inputs[i];
         }
 
         // Calculate output node values
         var outputs = new List<double>(NumOutputs);
-        foreach (var outputNode in _outputNodes)
-        {
-            // Reset the output node value before calculation
-            outputNode.Value = 0;
-            outputs.Add(outputNode.Value);
-        }
+        outputs.AddRange(OutputNodes.Select(outputNode => outputNode.Value));
 
         return outputs;
     }
