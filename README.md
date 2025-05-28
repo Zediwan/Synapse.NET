@@ -69,7 +69,7 @@ MIT License – see [LICENSE](LICENSE) for details.
 ---
 
 ## 🙏 Inspirations
-
+- [NEAT](https://nn.cs.utexas.edu/?stanley:ec02)
 - [ML.NET](https://dotnet.microsoft.com/en-us/apps/machinelearning-ai/ml-dotnet)
 - [Accord.NET](https://github.com/accord-net/framework)
 - [SharpNEAT](https://github.com/colgreen/sharpneat)
