@@ -5,93 +5,138 @@ public class Genome
     public Dictionary<Guid, NodeGene> Nodes { get; } = new();
     public Dictionary<string, ConnectionGene> Connections { get; } = new();
 
+    #region Helpers
+
+    /// <summary>
+    /// Adds a new node to the genome.
+    /// </summary>
+    /// <param name="node"> The <see cref="NodeGene"/> to be added. </param>
     public void AddNode(NodeGene node)
     {
-        Nodes[node.Id] = node;
+        Nodes.TryAdd(node.Id, node);
     }
 
+    /// <summary>
+    /// Adds a new connection to the genome.
+    /// </summary>
+    /// <param name="connection"> The <see cref="ConnectionGene"/> to be added. </param>
     public void AddConnection(ConnectionGene connection)
     {
-        var key = connection.GetKey();
-        Connections.TryAdd(key, connection);
+        Connections.TryAdd(connection.GetKey(), connection);
     }
-
+    
+    /// <summary>
+    /// Creates a deep copy of this genome, including all nodes and connections.
+    /// </summary>
+    /// <returns> The copied <see cref="Genome"/> object. </returns>
     public Genome Clone()
     {
+        throw new NotImplementedException();
+
+        // TODO: Handle correct cloning of nodes
         var clone = new Genome();
         foreach (var node in Nodes.Values)
-            clone.AddNode(new NodeGene(node.Type, node.ActivationType, node.Bias, node.Enabled)); // fresh ID per birth
+            clone.AddNode(node.Clone());
 
+        // TODO: Handle correct cloning of connections with the new, cloned nodes
         foreach (var conn in Connections.Values)
-            clone.AddConnection(new ConnectionGene(conn.FromNode, conn.ToNode, conn.Weight, conn.Enabled));
+            clone.AddConnection(conn.Clone());
 
         return clone;
     }
 
+    private bool IsValidConnection(NodeGene from, NodeGene to)
+    {
+        // Check if the nodes are identical
+        if (from == to)
+            return false; // Cannot connect a node to itself
+
+        // Check that from is not an output node
+        if (from.Type == NeuronType.Output)
+            return false;
+
+        // Check that to is not an input node
+        if (to.Type == NeuronType.Input)
+            return false;
+
+        // TODO: Check that to precedes from in topological order
+
+        return true;
+    }
+
+    #endregion
+
     #region Mutation
 
     #region Addition
-    public void MutateAddNode()
+
+    public NodeGene? MutateAddNode()
     {
-        // Ensure there are connections to split
-        if (Connections.Count == 0) return;
+        // TODO: should this always add a node if possible or just randomly try
+        // var enabledConnections = Connections.Values.Where(c => c.Enabled).ToList();
+        if (Connections.Count == 0) return null;
 
-        // Pick a random connection to split
-        var conn = Connections.Values.ElementAt(Random.Shared.Next(Connections.Count));
-        conn.Enabled = false;
+        // Randomly select a connection to split
+        var connection = Connections.Values.ElementAt(Random.Shared.Next(Connections.Count));
+        if (connection.FromNode == connection.ToNode) return null; // Cannot split self-loop
+        if (!connection.Enabled) return null; // Cannot split a disabled connection
 
-        var newNode = new NodeGene(NeuronType.Hidden);
+        // Create a new node in the middle of the selected connection
+        var newNode = new NodeGene(
+            NeuronType.Hidden, 
+            activationType: ActivationType.Linear, 
+            bias: NodeGene.RandomWeight(), 
+            enabled: true,
+            innovationId: InnovationCodex.GetOrCreateInnovationId(InnovationType.Split, connection.FromNode, connection.ToNode));
         AddNode(newNode);
 
-        // TODO: Depending on settings the weight should be inherited, averaged, random or defined if the first or second connection get the original weight
-        AddConnection(new ConnectionGene(conn.FromNode, newNode.Id, 1.0f));
-        AddConnection(new ConnectionGene(newNode.Id, conn.ToNode, conn.Weight));
+        // Create two new connections from the original connection to the new node
+        // First connection gets the weight 1
+        var conn1 = new ConnectionGene(connection.FromNode, newNode.Id, 1, true);
+        AddConnection(conn1);
+        // Second connection gets the original weight
+        var conn2 = new ConnectionGene(newNode.Id, connection.ToNode, connection.Weight, true);
+        AddConnection(conn2);
+
+        // Disable the original connection
+        connection.Enabled = false;
+        return newNode;
     }
 
-    public void MutateAddConnection()
+    public ConnectionGene? MutateAddConnection()
     {
-        var inputNodes = Nodes.Values.Where(n => n.Type == NeuronType.Input).ToList();
-        var outputNodes = Nodes.Values.Where(n => n.Type != NeuronType.Input && n.Type != NeuronType.Bias).ToList();
+        if (Nodes.Count < 2) return null; // Cannot add a connection if there are less than 2 nodes
 
-        // Ensure there are input and output nodes to connect
-        if (inputNodes.Count == 0 || outputNodes.Count == 0) return;
+        // Randomly select two nodes to connect
+        var fromNode = Nodes.Values.ElementAt(Random.Shared.Next(Nodes.Count));
+        var toNode = Nodes.Values.ElementAt(Random.Shared.Next(Nodes.Count));
 
-        // Randomly select an input and output node to connect
-        var fromNode = inputNodes[Random.Shared.Next(inputNodes.Count)].Id;
-        var toNode = outputNodes[Random.Shared.Next(outputNodes.Count)].Id;
+        if (!IsValidConnection(fromNode, toNode))
+            return null;
 
-        // Avoid self-connections
-        if (fromNode == toNode) return;
+        // If the connection already exists return
+        if (Connections.ContainsKey($"{fromNode.Id}->{toNode.Id}"))
+            return null;
 
-        AddConnection(new ConnectionGene(fromNode, toNode, Random.Shared.NextSingle() * 2 - 1));
+        // Create and add the new connection
+        var connection = new ConnectionGene(fromNode.Id, toNode.Id, NodeGene.RandomWeight(), true);
+        AddConnection(connection);
+
+        return connection;
     }
 
     #endregion
 
     #region Disabling
 
-    public void MutateDisableNode(NodeGene node)
+    public NodeGene? MutateDisableNode()
     {
-        if (node.Type is NeuronType.Input or NeuronType.Bias)
-            return; // Never remove inputs or bias nodes
+        throw new NotImplementedException();
+    }
 
-        var incoming = Connections.Values.Where(c => c.ToNode == node.Id).ToList();
-        var outgoing = Connections.Values.Where(c => c.FromNode == node.Id).ToList();
-
-        // Create shortcuts from each input → output
-        // TODO: Depending on settings the weight should be inherited, averaged or random
-        foreach (var inC in incoming)
-        {
-            foreach (var outC in outgoing)
-            {
-                AddConnection(new ConnectionGene(inC.FromNode, outC.ToNode, NodeGene.RandomWeight()));
-            }
-        }
-
-        // Disable the node and all related connections
-        node.Enabled = false;
-        foreach (var c in incoming.Concat(outgoing))
-            c.Enabled = false;
+    public ConnectionGene? MutateDisableConnection()
+    {
+        throw new NotImplementedException();
     }
 
     #endregion

@@ -1,13 +1,74 @@
-﻿namespace Synapse.NET.Models;
+﻿using Synapse.NET.Helpers;
+using System.Xml.Linq;
 
-public class NodeGene(NeuronType type, ActivationType activationType = ActivationType.Sigmoid, double bias = 0.0, bool enabled = true)
+namespace Synapse.NET.Models;
+
+public class NodeGene
 {
+    /// <summary> Globally unique runtime ID of this node. Used for internal graph tracking. </summary>
     public Guid Id { get; } = Guid.NewGuid();
-    public NeuronType Type { get; } = type;
-    public double Bias { get; set; } = bias;
-    public bool Enabled { get; set; } = enabled;
 
-    public ActivationType ActivationType { get; set; } = activationType;
+    /// <summary> Functional type of this node (Input, Hidden, Output, Bias). </summary>
+    public NeuronType Type { get; }
+
+    /// <summary> Whether this node is currently active in the network. </summary>
+    public bool Enabled { get; set; }
+
+    /// <summary> Bias value applied before activation. Evolves over time. </summary>
+    public double Bias { get; set; }
+
+    /// <summary> The activation function type used by this node. </summary>
+    public ActivationType? ActivationType { get; set; }
+
+    /// <summary> The activation function used by this node. </summary>
+    public Func<double, double> Activation { get; set; }
+
+    /// <summary> Innovation ID used for crossover alignment. Only needed for split nodes (hidden nodes). </summary>
+    public int? InnovationId { get; }
+
+    public NodeGene(
+        NeuronType type,
+        ActivationType? activationType = null,
+        Func<double, double>? activation = null,
+        double bias = 0.0,
+        bool enabled = true,
+        int? innovationId = null)
+    {
+        if (activationType != null)
+        {
+            var at = (ActivationType) activationType;
+            var func = ActivationFunctions.Functions[at];
+            Activation = func ?? throw new ArgumentException($"Activation function for {at} is not defined.");
+        }
+        else if (activation != null)
+        {
+            Activation = activation;
+        }
+        else
+        {
+            throw new ArgumentException("Either activationType or activation function must be provided.");
+        }
+
+        ActivationType = activationType;
+        Type = type;
+        Bias = bias;
+        Enabled = enabled;
+
+        if (innovationId == null && type == NeuronType.Hidden)
+        {
+            throw new ArgumentException("Innovation ID must be provided for hidden nodes.");
+        }
+        InnovationId = innovationId;
+    }
+
+    /// <summary>
+    /// Creates a shallow copy of this node with a fresh runtime ID.
+    /// Used during genome cloning.
+    /// </summary>
+    public NodeGene Clone()
+    {
+        throw new NotImplementedException();
+    }
 
     public static double RandomWeight(double min = -1.0, double max = 1.0)
     {
