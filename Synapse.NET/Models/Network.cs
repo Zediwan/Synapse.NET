@@ -1,5 +1,3 @@
-using Synapse.NET.Helpers;
-
 namespace Synapse.NET.Models;
 
 public class Network(Genome genome)
@@ -24,7 +22,7 @@ public class Network(Genome genome)
         // Apply activation function
         foreach (var node in genome.Nodes.Values.Where(node => node.Type != NeuronType.Input && node.Type != NeuronType.Bias))
         {
-            _currentValues[node.Id] = ActivationFunctions.Functions[node.ActivationType](_currentValues.GetValueOrDefault(node.Id));
+            _currentValues[node.Id] = node.Activation(_currentValues.GetValueOrDefault(node.Id));
         }
     }
 
