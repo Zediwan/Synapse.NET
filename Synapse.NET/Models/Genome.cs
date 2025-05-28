@@ -43,6 +43,7 @@ public class Genome
         var newNode = new NodeGene(NeuronType.Hidden);
         AddNode(newNode);
 
+        // TODO: Depending on settings the weight should be inherited, averaged, random or defined if the first or second connection get the original weight
         AddConnection(new ConnectionGene(conn.FromNode, newNode.Id, 1.0f));
         AddConnection(new ConnectionGene(newNode.Id, conn.ToNode, conn.Weight));
     }
