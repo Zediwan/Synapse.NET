@@ -20,7 +20,7 @@ public class Genome
     {
         var clone = new Genome();
         foreach (var node in Nodes.Values)
-            clone.AddNode(new NodeGene(node.Type)); // fresh ID per birth
+            clone.AddNode(new NodeGene(node.Type, node.ActivationType, node.Bias, node.Enabled)); // fresh ID per birth
 
         foreach (var conn in Connections.Values)
             clone.AddConnection(new ConnectionGene(conn.FromNode, conn.ToNode, conn.Weight, conn.Enabled));
