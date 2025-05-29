@@ -2,41 +2,32 @@
 
 public static class InnovationCodex
 {
-    private static readonly Dictionary<string, int> InnovationKeys = new();
-    private static int _nextInnovationId = 1;
+    private static readonly Dictionary<string, int> NodeInnovationKeys = [];
+    private static readonly Dictionary<string, int> ConnectionInnovationKeys = [];
 
-    /// <summary>
-    /// Gets or creates a unique innovation ID for a structural mutation,
-    /// such as adding a connection or splitting a connection into a new node.
-    /// </summary>
-    /// <param name="type"> The <see cref="InnovationType"/> </param>
-    /// <param name="from"> The start node ID involved in the mutation </param>
-    /// <param name="to"> The end node ID involved in the mutation </param>
-    /// <returns> A consistent innovation ID for the given mutation type and node pair </returns>
-    public static int GetOrCreateInnovationId(InnovationType type, Guid from, Guid to)
+    public static int NextNodeInnovationId = 1;
+    public static int NextConnectionInnovationId = 1;
+
+    public static int GetOrCreateInnovationIdForConnection(NodeGene fromNode, NodeGene toNode)
     {
-        var key = $"{nameof(type)}:{from}->{to}";
+        var key = $"{fromNode.InnovationId}->{toNode.InnovationId}";
 
-        if (InnovationKeys.TryGetValue(key, out var id))
+        if (ConnectionInnovationKeys.TryGetValue(key, out var id))
             return id;
 
-        id = _nextInnovationId++;
-        InnovationKeys[key] = id;
+        id = NextConnectionInnovationId++;
+        ConnectionInnovationKeys[key] = id;
         return id;
     }
-}
 
-/// <summary>
-/// Represents the type of innovation being performed in the genome.
-/// </summary>
-public enum InnovationType
-{
-    /// <summary>
-    /// Adding a new connection between two existing nodes.
-    /// </summary>
-    Connection,
-    /// <summary>
-    /// Splitting an existing connection into a new node.
-    /// </summary>
-    Split
+    public static int GetOrCreateInnovationIdForSplitNode(ConnectionGene connection)
+    {
+        var key = $"Split: {connection.GetKey()}";
+        if (ConnectionInnovationKeys.TryGetValue(key, out var id))
+            return id;
+
+        var innovationId = NextConnectionInnovationId++;
+        ConnectionInnovationKeys[key] = innovationId;
+        return innovationId;
+    }
 }

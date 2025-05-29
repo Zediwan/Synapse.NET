@@ -1,13 +1,9 @@
 ﻿using Synapse.NET.Helpers;
-using System.Xml.Linq;
 
 namespace Synapse.NET.Models;
 
 public class NodeGene
 {
-    /// <summary> Globally unique runtime ID of this node. Used for internal graph tracking. </summary>
-    public Guid Id { get; } = Guid.NewGuid();
-
     /// <summary> Functional type of this node (Input, Hidden, Output, Bias). </summary>
     public NeuronType Type { get; }
 
@@ -23,16 +19,16 @@ public class NodeGene
     /// <summary> The activation function used by this node. </summary>
     public Func<double, double> Activation { get; set; }
 
-    /// <summary> Innovation ID used for crossover alignment. Only needed for split nodes (hidden nodes). </summary>
-    public int? InnovationId { get; }
+    /// <summary> Innovation ID used for crossover alignment. </summary>
+    public int InnovationId { get; }
 
     public NodeGene(
         NeuronType type,
+        int innovationId,
         ActivationType? activationType = null,
         Func<double, double>? activation = null,
         double bias = 0.0,
-        bool enabled = true,
-        int? innovationId = null)
+        bool enabled = true)
     {
         if (activationType != null)
         {
@@ -53,11 +49,6 @@ public class NodeGene
         Type = type;
         Bias = bias;
         Enabled = enabled;
-
-        if (innovationId == null && type == NeuronType.Hidden)
-        {
-            throw new ArgumentException("Innovation ID must be provided for hidden nodes.");
-        }
         InnovationId = innovationId;
     }
 

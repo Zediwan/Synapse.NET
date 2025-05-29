@@ -2,8 +2,8 @@
 
 public class Genome
 {
-    public Dictionary<Guid, NodeGene> Nodes { get; } = new();
-    public Dictionary<string, ConnectionGene> Connections { get; } = new();
+    public Dictionary<int, NodeGene> Nodes { get; } = [];
+    public Dictionary<int, ConnectionGene> Connections { get; } = [];
 
     #region Helpers
 
@@ -13,7 +13,7 @@ public class Genome
     /// <param name="node"> The <see cref="NodeGene"/> to be added. </param>
     public void AddNode(NodeGene node)
     {
-        Nodes.TryAdd(node.Id, node);
+        Nodes.TryAdd(node.InnovationId, node);
     }
 
     /// <summary>
@@ -22,7 +22,7 @@ public class Genome
     /// <param name="connection"> The <see cref="ConnectionGene"/> to be added. </param>
     public void AddConnection(ConnectionGene connection)
     {
-        Connections.TryAdd(connection.GetKey(), connection);
+        Connections.TryAdd(connection.InnovationId, connection);
     }
     
     /// <summary>
@@ -32,21 +32,13 @@ public class Genome
     public Genome Clone()
     {
         throw new NotImplementedException();
-
-        // TODO: Handle correct cloning of nodes
-        var clone = new Genome();
-        foreach (var node in Nodes.Values)
-            clone.AddNode(node.Clone());
-
-        // TODO: Handle correct cloning of connections with the new, cloned nodes
-        foreach (var conn in Connections.Values)
-            clone.AddConnection(conn.Clone());
-
-        return clone;
     }
 
-    private bool IsValidConnection(NodeGene from, NodeGene to)
+    private bool IsValidConnection(ConnectionGene connection)
     {
+        var from = connection.FromNode;
+        var to = connection.ToNode;
+
         // Check if the nodes are identical
         if (from == to)
             return false; // Cannot connect a node to itself
@@ -83,19 +75,19 @@ public class Genome
 
         // Create a new node in the middle of the selected connection
         var newNode = new NodeGene(
-            NeuronType.Hidden, 
-            activationType: ActivationType.Linear, 
-            bias: NodeGene.RandomWeight(), 
-            enabled: true,
-            innovationId: InnovationCodex.GetOrCreateInnovationId(InnovationType.Split, connection.FromNode, connection.ToNode));
+            NeuronType.Hidden,
+            innovationId: InnovationCodex.GetOrCreateInnovationIdForSplitNode(connection),
+            activationType: ActivationType.Linear,
+            bias: NodeGene.RandomWeight(),
+            enabled: true);
         AddNode(newNode);
 
         // Create two new connections from the original connection to the new node
         // First connection gets the weight 1
-        var conn1 = new ConnectionGene(connection.FromNode, newNode.Id, 1, true);
+        var conn1 = new ConnectionGene(connection.FromNode, newNode, 1, true);
         AddConnection(conn1);
         // Second connection gets the original weight
-        var conn2 = new ConnectionGene(newNode.Id, connection.ToNode, connection.Weight, true);
+        var conn2 = new ConnectionGene(newNode, connection.ToNode, connection.Weight, true);
         AddConnection(conn2);
 
         // Disable the original connection
@@ -111,15 +103,17 @@ public class Genome
         var fromNode = Nodes.Values.ElementAt(Random.Shared.Next(Nodes.Count));
         var toNode = Nodes.Values.ElementAt(Random.Shared.Next(Nodes.Count));
 
-        if (!IsValidConnection(fromNode, toNode))
+        // Create the connection gene
+        var connection = new ConnectionGene(fromNode, toNode, NodeGene.RandomWeight(), true);
+
+        if (!IsValidConnection(connection))
             return null;
 
         // If the connection already exists return
-        if (Connections.ContainsKey($"{fromNode.Id}->{toNode.Id}"))
+        if (Connections.ContainsKey(connection.InnovationId))
             return null;
 
-        // Create and add the new connection
-        var connection = new ConnectionGene(fromNode.Id, toNode.Id, NodeGene.RandomWeight(), true);
+        // Add the new connection
         AddConnection(connection);
 
         return connection;
